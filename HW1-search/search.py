@@ -87,11 +87,107 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
+
+    #need to make it not expand on nodes that have already been visited
+
+    frontier = util.Stack() #this is our frontier
+    parents = {} #format is state:state except for the children of the start state which is state:coord
+    actions = [] #this will be what we return
+    visited = [problem.getStartState()] #keep track of states that have already been explored
+
+    #we have started at our goal
+    if problem.isGoalState(problem.getStartState()):
+        return actions
+    
+    #get successors of start state and put them into frontier
+    toAdd = problem.getSuccessors(problem.getStartState())
+    for successor in toAdd:
+        frontier.push(successor)
+        parents.update({successor:problem.getStartState()})
+    
+    #take first successor from frontier. This is the direction we will start heading in
+    currentState = frontier.pop()
+    
+    
+    while problem.isGoalState(currentState[0]) is not True: #while we are not at the goal state, keep looping
+        visited.append(currentState[0]) #add coordinates of current position to visited
+        toAdd = problem.getSuccessors(currentState[0]) #get successors of our current position
+        for successor in toAdd: 
+            if successor[0] not in visited:
+                if problem.isGoalState(successor[0]): #if successor of current state hasn't been visited, check if it's the goal state
+                    parents.update({successor:currentState}) #update parents
+                    currentState = successor #set currentState to the goal so we can start backtracking
+                    #backtrack through parents to get a list of actions to return
+                    while parents.get(currentState) != problem.getStartState():
+                        print(currentState)
+                        actions.append(currentState[1])
+                        currentState = parents.get(currentState)
+                    
+                    actions.append(currentState[1])
+                    actions.reverse()
+                    return actions
+
+                #if successor hasn't been visited and it's not the goal state, push it to the frontier and update parents
+                else:
+                    frontier.push(successor)
+                    parents.update({successor:currentState})
+        
+        #if frontier is empty, we haven't found a solution, so return none
+        if frontier.isEmpty():
+            return None
+
+        #update current state to be the next item in stack if it hasn't been visited already
+        currentState = frontier.pop()
+        while currentState in visited:
+            if not frontier.isEmpty():
+                currentState = frontier.pop()
+            else: #this happens if the frontier contains no states that haven't been visited
+                return None
+
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
+    frontier = util.Queue()
+    parents = {}
+    actions = []
+    visited = [problem.getStartState()]
+
+    if problem.isGoalState(problem.getStartState()):
+        return actions
+
+    toAdd = problem.getSuccessors(problem.getStartState())
+    for successor in toAdd:
+        frontier.push(successor)
+        parents.update({successor:problem.getStartState()})
+    
+    currentState = frontier.pop()
+
+    while problem.isGoalState(currentState[0]) is not True:
+        visited.append(currentState[0])
+        toAdd = problem.getSuccessors(currentState[0])
+        for successor in toAdd:
+            if successor[0] not in visited:
+                frontier.push(successor)
+                parents.update({successor:currentState})
+        
+        if frontier.isEmpty():
+            return None
+        else:
+            while currentState[0] in visited:
+                if not frontier.isEmpty():
+                    currentState = frontier.pop()
+                else:
+                    return None
+    
+    while currentState != problem.getStartState():
+        actions.append(currentState[1])
+        currentState = parents.get(currentState)
+    
+    actions.reverse()
+    return actions
+
     util.raiseNotDefined()
 
 def uniformCostSearch(problem):

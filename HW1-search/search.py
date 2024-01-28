@@ -143,8 +143,7 @@ def depthFirstSearch(problem):
                 currentState = frontier.pop()
             else: #this happens if the frontier contains no states that haven't been visited
                 return None
-
-    util.raiseNotDefined()
+            
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
@@ -188,12 +187,47 @@ def breadthFirstSearch(problem):
     actions.reverse()
     return actions
 
-    util.raiseNotDefined()
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    frontier = util.PriorityQueue() #push coordinates to this
+    costs = {} #key is coordinates, val is int
+    parents = {} #key is coordinates, val is coordinates
+    actionsFromParent = {} #key is coordinates, val is action
+    actions = [] #this is list to return
+
+    currentState = problem.getStartState()
+    costs.update({problem.getStartState():0})
+
+    while problem.isGoalState(currentState) is not True:
+        toAdd = problem.getSuccessors(currentState)
+        for successor in toAdd:
+            pathCost = successor[2] + costs.get(currentState)
+            if successor[0] not in costs.keys(): #this means we haven't reached this node before
+                costs.update({successor[0]:pathCost})
+                parents.update({successor[0]:currentState}) 
+                actionsFromParent.update({successor[0]:successor[1]})
+                frontier.update(successor[0], pathCost)
+            else:
+                if pathCost < costs.get(successor[0]):
+                    costs.update({successor[0]:pathCost})
+                    parents.update({successor[0]:currentState})
+                    actionsFromParent.update({successor[0]:successor[1]})
+                    frontier.update(successor[0], pathCost)
+        
+        if frontier.isEmpty():
+            return None
+        
+        currentState = frontier.pop()
+    
+    while currentState != problem.getStartState():
+        actions.append(actionsFromParent.get(currentState))
+        currentState = parents.get(currentState)
+    
+    actions.reverse()
+    return actions
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -205,7 +239,43 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    frontier = util.PriorityQueue() #push coordinates to this
+    costs = {} #key is coordinates, val is int
+    parents = {} #key is coordinates, val is coordinates
+    actionsFromParent = {} #key is coordinates, val is action
+    actions = [] #this is list to return
+
+    currentState = problem.getStartState()
+    costs.update({problem.getStartState():0})
+
+    while problem.isGoalState(currentState) is not True:
+        toAdd = problem.getSuccessors(currentState)
+        for successor in toAdd:
+            pathCostWithHeur = successor[2] + costs.get(currentState) + heuristic(successor[0], problem)
+            pathCostNoHeur = successor[2] + costs.get(currentState)
+            if successor[0] not in costs.keys(): #this means we haven't reached this node before
+                costs.update({successor[0]:pathCostNoHeur})
+                parents.update({successor[0]:currentState}) 
+                actionsFromParent.update({successor[0]:successor[1]})
+                frontier.update(successor[0], pathCostWithHeur)
+            else:
+                if pathCostNoHeur < costs.get(successor[0]):
+                    costs.update({successor[0]:pathCostNoHeur})
+                    parents.update({successor[0]:currentState})
+                    actionsFromParent.update({successor[0]:successor[1]})
+                    frontier.update(successor[0], pathCostWithHeur)
+        
+        if frontier.isEmpty():
+            return None
+        
+        currentState = frontier.pop()
+    
+    while currentState != problem.getStartState():
+        actions.append(actionsFromParent.get(currentState))
+        currentState = parents.get(currentState)
+    
+    actions.reverse()
+    return actions
 
 
 # Abbreviations

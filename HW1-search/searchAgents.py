@@ -292,8 +292,8 @@ class CornersProblem(search.SearchProblem):
         #define an abstract state representation that does not encode irrelevant information
         #  The only parts of the game state you need to reference in your implementation
         #    are the starting Pacman position and the location of the four corners.
-        visitedCorners = set()
-        self.cornersState = (self.startingPosition, [self.corners[0], self.corners[1], self.corners[2], self.corners[3]], visitedCorners)
+        visitedCorners = (0, 0, 0, 0)
+        self.cornersState = (self.startingPosition, (self.corners[0], self.corners[1], self.corners[2], self.corners[3]), visitedCorners)
 
     def getStartState(self):
         """
@@ -301,8 +301,8 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        # return self.cornersState[0]
-        return self.startingPosition
+        #starting
+        return (self.startingPosition, (0, 0, 0, 0))
 
 
 #STATUS: seems to be checking all of the paths to corner correctly, but it isn't necessarily taking those paths
@@ -313,12 +313,12 @@ class CornersProblem(search.SearchProblem):
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        if state in self.cornersState[1]:
-            self.cornersState[2].add(state)
-            if len(self.cornersState[2]) == 4:
-                return True
+        # if state[0] in self.cornersState[1]:
+        #     self.cornersState[2].add(state) 
+        #     if state[0] in self.cornersState[1]:
+        if sum(list(state[1])) == 4:
+            return True
         return False
-        util.raiseNotDefined()
 
     def getSuccessors(self, state):
         """
@@ -332,6 +332,7 @@ class CornersProblem(search.SearchProblem):
         """
 
         successors = []
+
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
@@ -341,14 +342,22 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
             "*** YOUR CODE HERE ***"
             #if we are not hitting a wall, add action to successors (successor state, action, 1)
-            x,y = state
+                    #added to check if our current state is a corner, if so we add to our visitedCorners set
+
+            x,y = state[0]
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
             hitsWall = self.walls[nextx][nexty]
             if not hitsWall:
                 nextState = (nextx, nexty)
-                successors.append( ( nextState, action, 1) )
+                cornersVisited = list(state[1])
 
+                if nextState in self.corners:
+                    index = self.corners.index(nextState)
+                    cornersVisited[index] = 1
+
+                successors.append( ((nextState, tuple(cornersVisited)), action, 1) )
+                    
         self._expanded += 1 # DO NOT CHANGE
         return successors
 
@@ -384,12 +393,17 @@ def cornersHeuristic(state, problem):
 
     "*** YOUR CODE HERE ***"
     #use manhattan distance to each corner, and then return the minimum value?
-    curX, curY = state
+    curX, curY = state[0]
+    if (curX, curY) in corners:
+        return 0
     minVal = float('inf')
     for corner in corners:
         goalX, goalY = corner
         manhattanDist = abs(curX - goalX) + abs(curY - goalY)
-        minVal = min(minVal, manhattanDist)
+        chesbyevDist = max(abs(curX - goalX), abs(curY - goalY))
+        scalar = 0.2
+        #need a value that is >> 0, but < true cost
+        minVal = min(minVal, scalar * chesbyevDist * manhattanDist)
 
     return minVal
 
@@ -487,7 +501,38 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    wallGrid = problem.walls
+    top, right = wallGrid.height, wallGrid.width
+
+    #if we are on a foodPellet, return 0
+    x, y = position
+    if foodGrid[x][y] == 1:
+        return 0
+    closestFood = float('inf')
+    foodCoords = x, y
+    #find coordinates of closest food (or if none, return max)
+    #then, once we have coordinates, return manhattanDistance from current
+    for i in range(0, right):
+        for j in range(0, top):
+            if foodGrid[i][j] == True:
+                manhattanDist = abs(x - i) + abs(y - j)
+                chesbyevDist = max(abs(x - i), abs(y - j))
+                scalar = 1
+                heuristicVal = scalar * manhattanDist
+                #need a value that is >> 0, but < true cost
+                if (heuristicVal) < closestFood:
+                    closestFood = heuristicVal
+                    foodCoords = i, j
+    if closestFood == float('inf'):
+        return 0
+    wallsInWay = 0
+    for i in range(x, foodCoords[0]):
+        for j in range(y, foodCoords[1]):
+            if problem.walls[i][j] == True:
+                wallsInWay += 8
+    return closestFood + wallsInWay
+
+
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"

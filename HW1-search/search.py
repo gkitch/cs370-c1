@@ -172,13 +172,13 @@ def breadthFirstSearch(problem):
                 parents.update({successor:currentState})
         
         if frontier.isEmpty():
-            return None
+            return actions
         else:
             while currentState[0] in visited:
                 if not frontier.isEmpty():
                     currentState = frontier.pop()
                 else:
-                    return None
+                    return actions
     
     while currentState != problem.getStartState():
         actions.append(currentState[1])
